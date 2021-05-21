@@ -1,6 +1,7 @@
 
 from typing import Callable
 import functools
+import json
 
 import httpx
 
@@ -19,11 +20,18 @@ async def register_flags_with_server(server_url, application_identity):
 
     return r.status_code
 
+server_url = "http://localhost:9001"
+application_identity = "ctff-example-featureflags"
 
 def lookup_flag(flag_name: str) -> bool:
   # do cool magic
   print(f"Looking up, the flag: {flag_name}")
-  return True
+  async with httpx.AsyncClient() as client:
+    authentication = "something"
+    url = f"{server_url}/{application_identity}/flags/{flag_name}"
+    r = await client.get(url, headers={"authentication": authentication})
+    return r.json()["state"]
+  return False
 
 def FeatureFlaggerMiddleware():
   pass
