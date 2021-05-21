@@ -23,7 +23,7 @@ async def register_flags_with_server(server_url, application_identity):
 server_url = "http://localhost:9001"
 application_identity = "ctff-example-featureflags"
 
-def lookup_flag(flag_name: str) -> bool:
+async def lookup_flag(flag_name: str) -> bool:
   # do cool magic
   print(f"Looking up, the flag: {flag_name}")
   async with httpx.AsyncClient() as client:
@@ -43,8 +43,8 @@ def FeatureFlagDecorator(flag_name):
 
   def inner(fn: Callable) -> Callable:
       @functools.wraps(fn)
-      def decorated(*args, **kwargs):
-        kwargs[flag_name] = lookup_flag(flag_name)
+      async def decorated(*args, **kwargs):
+        kwargs[flag_name] = await lookup_flag(flag_name)
         return fn(*args, **kwargs)
       return decorated
   
