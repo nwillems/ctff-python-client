@@ -1,9 +1,15 @@
 [tool.poetry]
 name = "ctff-client"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "A library for using the ctff feature flag service"
+authors = ["Nicolai Willems <nicwi@yousee.dk>"]
 license = "MIT"
+classifiers = [
+  'Development Status :: 4 - Beta'
+]
+packages = [
+  {include = "ctff"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
