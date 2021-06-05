@@ -1,53 +1,52 @@
 
 from typing import Callable
 import functools
-import json
 
 import httpx
 
-registry = set()
+class FeatureFlagger():
+  server_url: str
+  application_identity: str
 
-def register_flag(flag_name):
-  registry.add(flag_name)
+  flag_registry = set()
+  default_http_args = {}
 
-async def register_flags_with_server(server_url, application_identity):
-  flags_data = {"flags": list(registry)}
-  # get auth for this instance
-  async with httpx.AsyncClient() as client:
-    authentication = "something"
-    url = f"{server_url}/{application_identity}/register"
-    r = await client.post(url, json=flags_data, headers={"authentication": authentication})
+  def __init__(self, server_url: str, application_identity: str) -> None:
+      self.server_url = server_url
+      self.application_identity = application_identity
 
-    return r.status_code
+  def register_flag(self, flag_name):
+    self.flag_registry.add(flag_name)
 
-server_url = "http://localhost:9001"
-application_identity = "ctff-example-featureflags"
+  async def register_flags_with_server(self) -> bool:
+    flags_data = {"flags": list(self.flag_registry)}
+    # get auth for this instance
+    async with httpx.AsyncClient() as client:
+      #TODO: Authentication
+      url = f"{self.server_url}/{self.application_identity}/register"
+      resp = await client.post(url, json=flags_data)
 
-async def lookup_flag(flag_name: str) -> bool:
-  # do cool magic
-  print(f"Looking up, the flag: {flag_name}")
-  async with httpx.AsyncClient() as client:
-    authentication = "something"
-    url = f"{server_url}/{application_identity}/flags/{flag_name}"
-    r = await client.get(url, headers={"authentication": authentication})
-    return r.json()["state"]
-  return False
+      return resp.status_code == 200
 
-def FeatureFlaggerMiddleware():
-  pass
+  async def lookup_flag(self, flag_name) -> bool:
+    async with httpx.AsyncClient(**self.default_http_args) as client:
+      #TODO: Something about auth
+      url = f"{self.server_url}/{self.application_identity}/flags/{flag_name}"
+      resp = await client.get(url)
+      # TODO: Error handling
+      return resp.json()["state"]
 
-def FeatureFlagDecorator(flag_name):
-  # register flag_name
-  print(f"Registering flag: {flag_name}")
-  register_flag(flag_name)
+  def flag(self, flag_name):
+    """
+    Decorates a function for including the feature flag name in the key-value args to the fucntion.
+    """
+    self.register_flag(flag_name)
 
-  def inner(fn: Callable) -> Callable:
+    def inner(fn: Callable) -> Callable:
       @functools.wraps(fn)
       async def decorated(*args, **kwargs):
-        kwargs[flag_name] = await lookup_flag(flag_name)
+        kwargs[flag_name] = await self.lookup_flag(flag_name)
         return fn(*args, **kwargs)
       return decorated
-  
-  return inner
 
-featureflag = FeatureFlagDecorator
+    return inner
