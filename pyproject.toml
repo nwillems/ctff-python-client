@@ -8,7 +8,7 @@ classifiers = [
   'Development Status :: 4 - Beta'
 ]
 packages = [
-  {include = "ctff"}
+  {include = "ctff", from="."}
 ]
 
 [tool.poetry.dependencies]
